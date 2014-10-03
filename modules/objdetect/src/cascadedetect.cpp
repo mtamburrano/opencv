@@ -78,15 +78,21 @@ void groupRectangles(std::vector<Rect>& rectList, int groupThreshold, double eps
     std::vector<int> rweights(nclasses, 0);
     std::vector<int> rejectLevels(nclasses, 0);
     std::vector<double> rejectWeights(nclasses, DBL_MIN);
+    std::vector<double> means_weight(nclasses, 0); //added
     int i, j, nlabels = (int)labels.size();
     for( i = 0; i < nlabels; i++ )
     {
         int cls = labels[i];
-        rrects[cls].x += rectList[i].x;
-        rrects[cls].y += rectList[i].y;
+        means_weight[cls] += (*weights)[i];
+        rrects[cls].x += rectList[i].x*(*weights)[i];
+        rrects[cls].y += rectList[i].y*(*weights)[i];
         rrects[cls].width += rectList[i].width;
         rrects[cls].height += rectList[i].height;
         rweights[cls]++;
+    }
+    for(int i = 0; i<means_weight.size(); i++)
+    {
+      means_weight[i] /= rweights[i];
     }
 
     bool useDefaultWeights = false;
@@ -112,8 +118,8 @@ void groupRectangles(std::vector<Rect>& rectList, int groupThreshold, double eps
     {
         Rect r = rrects[i];
         float s = 1.f/rweights[i];
-        rrects[i] = Rect(saturate_cast<int>(r.x*s),
-             saturate_cast<int>(r.y*s),
+        rrects[i] = Rect(saturate_cast<int>((r.x*s)/means_weight[i]/*+(weigths[i]/255.0)*/),
+             saturate_cast<int>((r.y*s)/means_weight[i]),
              saturate_cast<int>(r.width*s),
              saturate_cast<int>(r.height*s));
     }
