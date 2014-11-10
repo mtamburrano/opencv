@@ -59,7 +59,7 @@ template<typename _Tp> void copyVectorToUMat(const std::vector<_Tp>& v, UMat& um
 void groupRectangles(std::vector<Rect>& rectList, int groupThreshold, double eps,
                      std::vector<int>* weights, std::vector<double>* levelWeights)
 {
-    if( groupThreshold <= 0 || rectList.empty() )
+    if( groupThreshold < 0 || rectList.empty() )
     {
         if( weights )
         {
