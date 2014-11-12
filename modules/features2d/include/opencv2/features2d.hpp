@@ -365,9 +365,10 @@ typedef ORB OrbDescriptorExtractor;
 class CV_EXPORTS_W MSER : public FeatureDetector
 {
 public:
+    enum { MSER_PLUS = 0, MSER_MINUS = 1, MSER_PLUS_MINUS = 2  };
     //! the full constructor
     CV_WRAP explicit MSER( int _delta=5, int _min_area=60, int _max_area=14400,
-          double _max_variation=0.25, double _min_diversity=.2,
+          double _max_variation=0.25, double _min_diversity=.2, int _type=2,
           int _max_evolution=200, double _area_threshold=1.01,
           double _min_margin=0.003, int _edge_blur_size=5 );
 
@@ -384,6 +385,7 @@ protected:
     int maxArea;
     double maxVariation;
     double minDiversity;
+    int type;
     int maxEvolution;
     double areaThreshold;
     double minMargin;

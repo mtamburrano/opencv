@@ -194,10 +194,10 @@ inline void _bitreset(unsigned long * a, unsigned long b)
 struct MSERParams
 {
     MSERParams( int _delta, int _minArea, int _maxArea, double _maxVariation,
-                double _minDiversity, int _maxEvolution, double _areaThreshold,
+                double _minDiversity, int _type, int _maxEvolution, double _areaThreshold,
                 double _minMargin, int _edgeBlurSize )
         : delta(_delta), minArea(_minArea), maxArea(_maxArea), maxVariation(_maxVariation),
-        minDiversity(_minDiversity), maxEvolution(_maxEvolution), areaThreshold(_areaThreshold),
+        minDiversity(_minDiversity), type(_type), maxEvolution(_maxEvolution), areaThreshold(_areaThreshold),
         minMargin(_minMargin), edgeBlurSize(_edgeBlurSize)
     {}
     int delta;
@@ -205,6 +205,7 @@ struct MSERParams
     int maxArea;
     double maxVariation;
     double minDiversity;
+    int type;
     int maxEvolution;
     double areaThreshold;
     double minMargin;
@@ -666,11 +667,17 @@ static void extractMSER_8UC1( CvMat* src,
     MSERConnectedComp comp[257];
 
     // darker to brighter (MSER-)
-    imgptr = preprocessMSER_8UC1( img, heap_start, src, mask );
-    extractMSER_8UC1_Pass( ioptr, imgptr, heap_start, pts, history, comp, step, stepmask, stepgap, params, -1, contours, storage );
-    // brighter to darker (MSER+)
-    imgptr = preprocessMSER_8UC1( img, heap_start, src, mask );
-    extractMSER_8UC1_Pass( ioptr, imgptr, heap_start, pts, history, comp, step, stepmask, stepgap, params, 1, contours, storage );
+    if(params.type == MSER::MSER_MINUS || params.type == MSER::MSER_PLUS_MINUS)
+    {
+      imgptr = preprocessMSER_8UC1( img, heap_start, src, mask );
+      extractMSER_8UC1_Pass( ioptr, imgptr, heap_start, pts, history, comp, step, stepmask, stepgap, params, -1, contours, storage );
+    }
+    if(params.type == MSER::MSER_PLUS || params.type == MSER::MSER_PLUS_MINUS)
+    {
+      // brighter to darker (MSER+)
+      imgptr = preprocessMSER_8UC1( img, heap_start, src, mask );
+      extractMSER_8UC1_Pass( ioptr, imgptr, heap_start, pts, history, comp, step, stepmask, stepgap, params, 1, contours, storage );
+    }
 
     // clean up
     cvFree( &history );
@@ -1256,11 +1263,11 @@ extractMSER( CvArr* _img,
 
 
 MSER::MSER( int _delta, int _min_area, int _max_area,
-      double _max_variation, double _min_diversity,
+      double _max_variation, double _min_diversity, int _type,
       int _max_evolution, double _area_threshold,
       double _min_margin, int _edge_blur_size )
     : delta(_delta), minArea(_min_area), maxArea(_max_area),
-    maxVariation(_max_variation), minDiversity(_min_diversity),
+    maxVariation(_max_variation), minDiversity(_min_diversity),type(_type),
     maxEvolution(_max_evolution), areaThreshold(_area_threshold),
     minMargin(_min_margin), edgeBlurSize(_edge_blur_size)
 {
@@ -1274,7 +1281,7 @@ void MSER::operator()( InputArray image, std::vector<std::vector<Point> >& dstco
     MemStorage storage(cvCreateMemStorage(0));
     Seq<CvSeq*> contours;
     extractMSER( &_image, pmask, &contours.seq, storage,
-                 MSERParams(delta, minArea, maxArea, maxVariation, minDiversity,
+                 MSERParams(delta, minArea, maxArea, maxVariation, minDiversity, type,
                             maxEvolution, areaThreshold, minMargin, edgeBlurSize));
     SeqIterator<CvSeq*> it = contours.begin();
     size_t i, ncontours = contours.size();
@@ -1288,7 +1295,7 @@ void MserFeatureDetector::detectImpl( InputArray _image, std::vector<KeyPoint>& 
 {
     Mat image = _image.getMat(), mask = _mask.getMat();
     std::vector<std::vector<Point> > msers;
-
+  
     (*this)(image, msers, mask);
 
     std::vector<std::vector<Point> >::const_iterator contour_it = msers.begin();
